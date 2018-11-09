@@ -121,9 +121,7 @@ void checaConec()
 
 void readDataMsg(){
   int messageTam;
-   //char nRcvBuffer[kMaxSizeOfMessage * 5];
   char bufferEntrada[maxTamMessage];
-   //while (bufferEntrada[0]==0){// Check to see if a message is available
 
       messageTam = cCmdMessageGetSize(entrada1);
       if(messageTam<=0)
@@ -136,7 +134,6 @@ void readDataMsg(){
        iniciar = true;
      else if(bufferEntrada[0] == 'P' || bufferEntrada[0] == 'p')
        iniciar = false;
-   //}
    return;
 }
 //////////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +144,7 @@ task tBTmensage(){
   while(true){
      checaConec();
      readDataMsg();
-      wait1Msec(1);
+     wait1Msec(1);
   }
 }
 

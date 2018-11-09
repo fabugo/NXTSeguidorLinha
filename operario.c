@@ -15,20 +15,21 @@
 #define B_DIREITA 1
 #define B_ESQUERDA 2
 #define B_LARANJA 3
+
 #define VELOCIDADE 50
 
 #define PRATA 75
 #define BRANCO 55
 #define PRETO 25
 
-
 task controle();
 
 int obterCor(int sensor);
-void andar(int esquerda,int direita);
+void andar(int direita,int esquerda);
 void curva(char sentido);
 void emFrente();
-void stopAllMotors();
+void parar();
+void desviar();
 
 bool caminhar = true;
 int estado = PARADO;
@@ -39,31 +40,29 @@ StartTask(controle);
     if(caminhar){
       switch(estado){
         case PARADO:
-          stopAllMotors();
           nxtDisplayString(1,"PARADO");
+          parar();
         break;
         case FRENTE:
-          stopAllMotors();
           nxtDisplayString(1,"FRENTE");
           emFrente();
         break;
         case CURVA_DIR:
-          stopAllMotors();
           nxtDisplayString(1,"CURVA DIREITA");
           curva('D');
         break;
         case CURVA_ESQ:
-          stopAllMotors();
           nxtDisplayString(1,"CURVA ESQUERDA");
           curva('E');
         break;
         case BIFURCA:
-          stopAllMotors();
           nxtDisplayString(1,"BIFURCA");
+          curva('E');
         break;
         case OBSTACULO:
-          stopAllMotors();
           nxtDisplayString(1,"OBSTACULO");
+          StopTask(controle);
+          desviar();
         break;
         default:
           nxtDisplayString(1,"ERRO");
@@ -73,19 +72,26 @@ StartTask(controle);
 }
 
 task controle(){
-int luzEsq;
-int luzDir;
+	int luzEsq;
+	int luzDir;
+	int distancia;
   for(;;){
-    luzEsq = obterCor(SensorValue[sensorLuzDir]);
-    luzDir = obterCor(SensorValue[sensorLuzEsq]);
-    if(luzEsq == BRANCO && luzDir == BRANCO)
-      estado = FRENTE;
-    else if (luzDir == PRETO && luzEsq == BRANCO)
-      estado = CURVA_DIR;
-    else if (luzDir == BRANCO && luzEsq == PRETO)
-      estado = CURVA_ESQ;
+    luzEsq = obterCor(SensorValue[sensorLuzEsq]);
+    luzDir = obterCor(SensorValue[sensorLuzDir]);
+    distancia = SensorValue[sonar];
+    if(distancia < 10)
+      estado = OBSTACULO;
     else
-      estado = PARADO;
+	    if(luzEsq == BRANCO && luzDir == BRANCO)
+	      estado = FRENTE;
+	    else if (luzDir == PRETO && luzEsq == BRANCO)
+	      estado = CURVA_DIR;
+	    else if (luzDir == BRANCO && luzEsq == PRETO)
+	      estado = CURVA_ESQ;
+	    else if(luzDir == PRETO && luzEsq == PRETO)
+	      estado = BIFURCA;
+	    else
+	      estado = PARADO;
   }
 }
 
@@ -101,30 +107,32 @@ int obterCor(int sensor){
     return PRATA;
 }
 
-void andar(int esquerda, int direita){
-  motor[motorEsq] = VELOCIDADE/esquerda;
-  motor[motorDir] = VELOCIDADE/direita;
-
-  wait1Msec(500);
+void desviar(){
+  /*TODO
+  Girar 90 graus pra esquerda
+  Girar 90 graus pra direita
+  Girar 90 graus pra direita denovo
+  */
+  StartTask(controle);
 }
 
 void curva(char sentido){
-  if(sentido == 'D'){
-    andar(1,2);
-    nxtDisplayString(2,sentido);
-  }
-  else if(sentido == 'E'){
-    nxtDisplayString(2,sentido);
-    andar(2,1);
-  }
+  if(sentido == 'D')
+    andar(-2,1);
+  else if(sentido == 'E')
+    andar(1,-2);
 }
 
 void emFrente(){
-  andar(1,1);
+    andar(1,1);
 }
 
-void stopAllMotors(){
-  motor[motorA] = 0;
-  motor[motorB] = 0;
-  wait1Msec(50);
+void parar(){
+  motor[motorDir] = 0;
+  motor[motorEsq] = 0;
+}
+
+void andar(int direita, int esquerda){
+  motor[motorDir] = VELOCIDADE/direita;
+  motor[motorEsq] = VELOCIDADE/esquerda;
 }
